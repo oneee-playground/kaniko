@@ -18,20 +18,14 @@ package config
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/GoogleContainerTools/kaniko/pkg/constants"
 )
 
-var RootDir string
+var RootDir = "/tmp/"
 
 // KanikoDir is the path to the Kaniko directory
-var KanikoDir = func() string {
-	if kd, ok := os.LookupEnv("KANIKO_DIR"); ok {
-		return kd
-	}
-	return constants.DefaultKanikoPath
-}()
+var KanikoDir = "/tmp/kaniko"
 
 // DockerfilePath is the path the Dockerfile is copied to
 var DockerfilePath = fmt.Sprintf("%s/Dockerfile", KanikoDir)
@@ -47,6 +41,5 @@ var KanikoIntermediateStagesDir = fmt.Sprintf("%s/stages/", KanikoDir)
 var MountInfoPath string
 
 func init() {
-	RootDir = constants.RootDir
 	MountInfoPath = constants.MountInfoPath
 }

@@ -525,7 +525,7 @@ func ParentDirectories(path string) []string {
 	dir := filepath.Clean(path)
 	var paths []string
 	for {
-		if dir == filepath.Clean(config.RootDir) || dir == "" || dir == "." {
+		if dir == "/" || dir == "" || dir == "." {
 			break
 		}
 		dir, _ = filepath.Split(dir)

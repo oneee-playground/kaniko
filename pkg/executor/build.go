@@ -816,6 +816,19 @@ func DoBuild(opts *config.KanikoOptions) (v1.Image, error) {
 				}
 			}
 			timing.DefaultRun.Stop(t)
+
+			configFile, err := sourceImage.ConfigFile()
+			if err != nil {
+				return nil, err
+			}
+
+			restoreEnv(configFile)
+
+			sourceImage, err = mutate.ConfigFile(sourceImage, configFile)
+			if err != nil {
+				return nil, err
+			}
+
 			return sourceImage, nil
 		}
 		if stage.SaveStage {
@@ -1051,6 +1064,28 @@ func reviewConfig(stage config.KanikoStage, config *v1.Config) {
 	}
 	if entrypoint && !cmd {
 		config.Cmd = nil
+	}
+}
+
+func restoreEnv(configFile *v1.ConfigFile) {
+	for i, kv := range configFile.Config.Env {
+		sub := strings.SplitN(kv, "=", 2)
+
+		switch {
+		case sub[0] == "PATH":
+			values := strings.Split(sub[1], ":")
+			for i, v := range values {
+				cleaned, _ := strings.CutPrefix(v, config.RootDir)
+				values[i] = cleaned
+			}
+			sub[1] = strings.Join(values, ":")
+
+		default:
+			cleaned, _ := strings.CutPrefix(sub[1], config.RootDir)
+			sub[1] = cleaned
+		}
+
+		configFile.Config.Env[i] = strings.Join(sub, "=")
 	}
 }
 

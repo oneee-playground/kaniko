@@ -20,9 +20,11 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"syscall"
 
+	conf "github.com/GoogleContainerTools/kaniko/pkg/config"
 	kConfig "github.com/GoogleContainerTools/kaniko/pkg/config"
 	"github.com/GoogleContainerTools/kaniko/pkg/constants"
 	"github.com/GoogleContainerTools/kaniko/pkg/dockerfile"
@@ -61,6 +63,18 @@ func runCommandInExec(config *v1.Config, buildArgs *dockerfile.BuildArgs, cmdRun
 			shell = config.Shell
 		} else {
 			shell = append(shell, "/bin/sh", "-c")
+		}
+
+		if len(cmdRun.CmdLine) > 0 {
+			cmdline := strings.Split(cmdRun.CmdLine[0], " ")
+			cmds := make([]string, len(cmdline))
+			for i, cmd := range cmdline {
+				if filepath.IsAbs(cmd) {
+					cmd = filepath.Join(conf.RootDir, cmd)
+				}
+				cmds[i] = cmd
+			}
+			cmdRun.CmdLine[0] = strings.Join(cmds, " ")
 		}
 
 		newCommand = append(shell, strings.Join(cmdRun.CmdLine, " "))

@@ -22,7 +22,7 @@ import (
 	"github.com/GoogleContainerTools/kaniko/pkg/constants"
 )
 
-var RootDir = "/tmp/"
+var RootDir = "/tmp"
 
 // KanikoDir is the path to the Kaniko directory
 var KanikoDir = "/tmp/kaniko"

@@ -32,6 +32,7 @@ import (
 	"time"
 
 	"github.com/GoogleContainerTools/kaniko/pkg/config"
+	"github.com/GoogleContainerTools/kaniko/pkg/constants"
 	"github.com/GoogleContainerTools/kaniko/pkg/timing"
 	"github.com/docker/docker/pkg/archive"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -866,21 +867,21 @@ func MkdirAllWithPermissions(path string, mode os.FileMode, uid, gid int64) erro
 			),
 		)
 	}
-	if err := os.Chown(path, int(uid), int(gid)); err != nil {
-		return err
-	}
+	// if err := os.Chown(path, int(uid), int(gid)); err != nil {
+	// 	return err
+	// }
 	// In some cases, MkdirAll doesn't change the permissions, so run Chmod
 	// Must chmod after chown because chown resets the file mode.
 	return os.Chmod(path, mode)
 }
 
 func setFilePermissions(path string, mode os.FileMode, uid, gid int) error {
-	if err := os.Chown(path, uid, gid); err != nil {
-		return err
-	}
+	// if err := os.Chown(path, uid, gid); err != nil {
+	// 	return err
+	// }
 	// manually set permissions on file, since the default umask (022) will interfere
 	// Must chmod after chown because chown resets the file mode.
-	return os.Chmod(path, mode)
+	return os.Chmod(path, mode.Perm())
 }
 
 func setFileTimes(path string, aTime, mTime time.Time) error {
@@ -1084,9 +1085,10 @@ func InitIgnoreList() error {
 	logrus.Trace("Initializing ignore list")
 	ignorelist = append([]IgnoreListEntry{}, defaultIgnoreList...)
 
-	if err := DetectFilesystemIgnoreList(config.MountInfoPath); err != nil {
-		return errors.Wrap(err, "checking filesystem mount paths for ignore list")
-	}
+	ignorelist = append(ignorelist, IgnoreListEntry{Path: constants.DefaultHOMEValue, PrefixMatchOnly: true})
+	// if err := DetectFilesystemIgnoreList(config.MountInfoPath); err != nil {
+	// 	return errors.Wrap(err, "checking filesystem mount paths for ignore list")
+	// }
 
 	return nil
 }

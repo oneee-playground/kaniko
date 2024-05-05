@@ -96,7 +96,7 @@ func fcopy(src, dest string, info os.FileInfo, opt Options) (err error) {
 	}
 	defer fclose(readcloser, &err)
 
-	if err = os.MkdirAll(filepath.Dir(dest), os.ModePerm); err != nil {
+	if err = os.MkdirAll(filepath.Dir(dest), 0655); err != nil {
 		return
 	}
 

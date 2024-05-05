@@ -23,6 +23,7 @@ import (
 	"github.com/GoogleContainerTools/kaniko/pkg/dockerfile"
 	"github.com/pkg/errors"
 
+	conf "github.com/GoogleContainerTools/kaniko/pkg/config"
 	"github.com/GoogleContainerTools/kaniko/pkg/util"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/moby/buildkit/frontend/dockerfile/instructions"
@@ -47,12 +48,12 @@ func (w *WorkdirCommand) ExecuteCommand(config *v1.Config, buildArgs *dockerfile
 		return err
 	}
 	if filepath.IsAbs(resolvedWorkingDir) {
-		config.WorkingDir = resolvedWorkingDir
+		config.WorkingDir = filepath.Join(conf.RootDir, resolvedWorkingDir)
 	} else {
 		if config.WorkingDir != "" {
 			config.WorkingDir = filepath.Join(config.WorkingDir, resolvedWorkingDir)
 		} else {
-			config.WorkingDir = filepath.Join("/", resolvedWorkingDir)
+			config.WorkingDir = filepath.Join(conf.RootDir, resolvedWorkingDir)
 		}
 	}
 	logrus.Infof("Changed working directory to %s", config.WorkingDir)

@@ -102,6 +102,9 @@ func (t *Tar) AddFileToTar(p string) error {
 		return err
 	}
 
+	if p == "/" {
+		return nil
+	}
 	if p == config.RootDir {
 		// allow entry for / to preserve permission changes etc. (currently ignored anyway by Docker runtime)
 		hdr.Name = "/"

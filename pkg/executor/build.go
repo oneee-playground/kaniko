@@ -339,6 +339,8 @@ func (s *stageBuilder) build() error {
 		logrus.Info("Skipping unpacking as no commands require it.")
 	}
 
+	s.redirectEnv()
+
 	initSnapshotTaken := false
 	if s.opts.SingleSnapshot {
 		if err := s.initSnapshotWithTimings(); err != nil {
@@ -436,6 +438,28 @@ func (s *stageBuilder) build() error {
 	}
 
 	return nil
+}
+
+func (s *stageBuilder) redirectEnv() {
+	for i, kv := range s.cf.Config.Env {
+		sub := strings.SplitN(kv, "=", 2)
+
+		switch {
+		case sub[0] == "PATH":
+			values := strings.Split(sub[1], ":")
+			for i, v := range values {
+				if filepath.IsAbs(v) {
+					values[i] = filepath.Join(config.RootDir, v)
+				}
+			}
+			sub[1] = strings.Join(values, ":")
+
+		case filepath.IsAbs(sub[1]):
+			sub[1] = filepath.Join(config.RootDir, sub[1])
+		}
+
+		s.cf.Config.Env[i] = strings.Join(sub, "=")
+	}
 }
 
 func (s *stageBuilder) takeSnapshot(files []string, shdDelete bool) (string, error) {
@@ -805,7 +829,7 @@ func DoBuild(opts *config.KanikoOptions) (v1.Image, error) {
 			return nil, err
 		}
 		dstDir := filepath.Join(config.KanikoDir, strconv.Itoa(index))
-		if err := os.MkdirAll(dstDir, 0644); err != nil {
+		if err := os.MkdirAll(dstDir, 0755); err != nil {
 			return nil, errors.Wrap(err,
 				fmt.Sprintf("to create workspace for stage %s",
 					stageIdxToDigest[strconv.Itoa(index)],

@@ -197,6 +197,8 @@ func DestinationFilepath(src, dest, cwd string) (string, error) {
 		if strings.HasSuffix(dest, pathSeparator) || strings.HasSuffix(dest, ".") {
 			newDest += pathSeparator
 		}
+	} else {
+		newDest = filepath.Join(config.RootDir, newDest)
 	}
 	if IsDestDir(newDest) {
 		newDest = filepath.Join(newDest, srcFileName)
@@ -215,7 +217,7 @@ func URLDestinationFilepath(rawurl, dest, cwd string, envs []string) (string, er
 		if !filepath.IsAbs(dest) {
 			return filepath.Join(cwd, dest), nil
 		}
-		return dest, nil
+		return filepath.Join(config.RootDir, dest), nil
 	}
 
 	urlBase, err := ResolveEnvironmentReplacement(rawurl, envs, true)
@@ -232,6 +234,8 @@ func URLDestinationFilepath(rawurl, dest, cwd string, envs []string) (string, er
 
 	if !filepath.IsAbs(dest) {
 		destPath = filepath.Join(cwd, destPath)
+	} else {
+		destPath = filepath.Join(config.KanikoDir, destPath)
 	}
 	return destPath, nil
 }
@@ -302,7 +306,7 @@ func IsSrcRemoteFileURL(rawurl string) bool {
 	return err == nil && u.Scheme != "" && u.Host != ""
 }
 
-func UpdateConfigEnv(envVars []instructions.KeyValuePair, config *v1.Config, replacementEnvs []string) error {
+func UpdateConfigEnv(envVars []instructions.KeyValuePair, conf *v1.Config, replacementEnvs []string) error {
 	newEnvs := make([]instructions.KeyValuePair, len(envVars))
 	for index, pair := range envVars {
 		expandedKey, err := ResolveEnvironmentReplacement(pair.Key, replacementEnvs, false)
@@ -313,6 +317,17 @@ func UpdateConfigEnv(envVars []instructions.KeyValuePair, config *v1.Config, rep
 		if err != nil {
 			return err
 		}
+
+		if expandedKey == "PATH" {
+			values := strings.Split(expandedValue, ":")
+			for i, v := range values {
+				if filepath.IsAbs(v) {
+					values[i] = filepath.Join(config.RootDir, v)
+				}
+			}
+			expandedValue = strings.Join(values, ":")
+		}
+
 		newEnvs[index] = instructions.KeyValuePair{
 			Key:   expandedKey,
 			Value: expandedValue,
@@ -321,7 +336,7 @@ func UpdateConfigEnv(envVars []instructions.KeyValuePair, config *v1.Config, rep
 
 	// First, convert config.Env array to []instruction.KeyValuePair
 	var kvps []instructions.KeyValuePair
-	for _, env := range config.Env {
+	for _, env := range conf.Env {
 		entry := strings.SplitN(env, "=", 2)
 		kvps = append(kvps, instructions.KeyValuePair{
 			Key:   entry[0],
@@ -349,7 +364,7 @@ Loop:
 		entry := kvp.Key + "=" + kvp.Value
 		envArray = append(envArray, entry)
 	}
-	config.Env = envArray
+	conf.Env = envArray
 	return nil
 }
 
